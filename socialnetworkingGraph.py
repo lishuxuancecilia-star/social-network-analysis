@@ -74,9 +74,11 @@ nx.draw_networkx_labels(
     G,
     pos,
     labels={your_node: your_node},
-    font_size=14,
+    font_size=7,
     font_color="black"
 )
+
+nx.draw_networkx_labels(G, pos, font_size=6)
 
 # =========================
 # 5️⃣ 在图上写指标
