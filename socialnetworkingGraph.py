@@ -2,30 +2,61 @@ import pandas as pd
 import networkx as nx
 import matplotlib.pyplot as plt
 
-# 1. 读取 CSV 文件
+# 读取 CSV 文件
 file_path = "CommentDataset.csv"
 df = pd.read_csv(file_path)
 
 df = df[['Your Class ID', 'Target Class ID']].copy()
 df.columns = ['from', 'to']
 
-# 数据清洗：转为字符串并去除空格
+# =========================
+# 数据清洗函数
+# 规则：
+# 1. 清洗非纯数字节点
+# 2. 清洗以 1155 开头且数值 > 200 的节点
+# =========================
+def is_valid_node(x):
+    # 空值直接删
+    if pd.isna(x):
+        return False
+
+    # 统一转字符串并去空格
+    x = str(x).strip()
+
+    # 处理空字符串和 nan
+    if x == "" or x.lower() == "nan":
+        return False
+
+    # 非纯数字直接删
+    if not x.isdigit():
+        return False
+
+    # 以 1155 开头且数值 > 200 的节点删掉
+    if x.startswith("1155") and int(x) > 200:
+        return False
+
+    return True
+
+# 保留 from 和 to 都合法的边
+df = df[df['from'].apply(is_valid_node) & df['to'].apply(is_valid_node)].copy()
+
+# 再次统一成字符串，防止后面节点类型不一致
 df['from'] = df['from'].astype(str).str.strip()
 df['to'] = df['to'].astype(str).str.strip()
 
-# 2. 使用 NetworkX 构建有向图 G (Task 1 & 2)
+# 使用 NetworkX 构建有向图 G
 G = nx.DiGraph()
 # 每个 directed edge 代表一个 “comment-to” 关系
 G.add_edges_from(zip(df['from'], df['to']))
 
-# 3. 设置你自己的节点 ID (请将 "58" 修改为你实际的学号)
+# 3. 设置节点 ID
 your_node = "58"
 
-# 4. 打印要求的四个值 (Task 2)
+# 4. 打印要求的四个值
 if your_node not in G.nodes():
     print(f"Error: Node {your_node} not found in the dataset. Please check your ID.")
 else:
-    # 按照 PPT 要求的格式输出
+
     print("In-degree:", G.in_degree(your_node))
     print("Out-degree:", G.out_degree(your_node))
 
@@ -36,31 +67,28 @@ else:
     print("Closeness Centrality:", closeness.get(your_node))
     print("Betweenness Centrality:", betweenness.get(your_node))
 
-plt.figure(figsize=(20, 20))
+plt.figure(figsize=(8, 6))
 
 pos = nx.circular_layout(G)
 
-# 1️⃣ 画边（保留箭头！！）
+#画边
 nx.draw_networkx_edges(
     G,
     pos,
-    arrows=True,          # ✅ 保留箭头（关键）
-    #arrowstyle='-|>',
-    #arrowsize=10,
-    #alpha=0.05,           # 淡一点，不然太乱
+    arrows=True,
     width=0.3,
     edge_color="gray"
 )
 
-# 2️⃣ 所有节点
+# 所有节点
 nx.draw_networkx_nodes(
     G,
     pos,
-    node_size=50,
+    node_size=60,
     node_color="lightgreen"
 )
 
-# 3️⃣ 高亮你的节点（红色）
+#高亮自己节点（红色）
 nx.draw_networkx_nodes(
     G,
     pos,
@@ -69,19 +97,19 @@ nx.draw_networkx_nodes(
     node_color="red"
 )
 
-# 4️⃣ 只标你自己
+#只标自己
 nx.draw_networkx_labels(
     G,
     pos,
     labels={your_node: your_node},
-    font_size=7,
+    font_size=4,
     font_color="black"
 )
 
-nx.draw_networkx_labels(G, pos, font_size=6)
+nx.draw_networkx_labels(G, pos, font_size=4)
 
 # =========================
-# 5️⃣ 在图上写指标
+#在图上写指标
 # =========================
 if your_node in G.nodes():
     info_text = (
@@ -96,7 +124,7 @@ if your_node in G.nodes():
         0.02, 0.98,
         info_text,
         transform=plt.gca().transAxes,
-        fontsize=14,
+        fontsize=8,
         verticalalignment='top',
         bbox=dict(facecolor='white', alpha=0.8, edgecolor='black')
     )
